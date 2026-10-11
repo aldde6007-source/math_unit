@@ -1,0 +1,1601 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>たんいの はこ</title>
+<style>
+  /* ===== いろ・きほんの みため ===== */
+  :root {
+    --bg: #fff8ef;
+    --ink: #4a3b33;
+    --panel: #ffffff;
+    --big: #ff8fab;     /* おおきい はこ(たんいグループ ごとに JS で かえる) */
+    --alt: #ff6f91;     /* となりどうしを みわけるための こい いろ */
+    --small: #5bb8dc;   /* ちいさい はこ */
+    --road: #eadfce;
+    --goal: #2fb67c;
+    --accent: #e85d75;
+    --ng: #ff9f43;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Hiragino Maru Gothic ProN", "BIZ UDPGothic", "Yu Gothic UI", "Meiryo", sans-serif;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body { min-height: 100vh; display: flex; justify-content: center; padding: 12px 16px 32px; }
+  main { width: 100%; max-width: 900px; }
+  .col { display: flex; flex-direction: column; gap: 14px; }
+  rt { font-size: 0.5em; }
+  button { font-family: inherit; color: inherit; }
+  .hidden { display: none !important; }
+
+  header { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  h1 { font-size: 1.3rem; margin: 0; flex: 1; text-align: center; white-space: nowrap; }
+  .stars { font-size: 1.1rem; white-space: nowrap; }
+  .homeBtn { white-space: nowrap; flex: none; border: none; background: #fff; border-radius: 14px; min-height: 48px; padding: 4px 14px; font-size: 1.05rem; font-weight: bold; box-shadow: 0 3px 0 rgba(0,0,0,.1); cursor: pointer; }
+
+  .card { background: var(--panel); border-radius: 20px; padding: 14px 16px; box-shadow: 0 3px 0 rgba(0,0,0,.08); }
+
+  /* ===== メニュー ===== */
+  .menuGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; }
+  .menuItem {
+    border: none; border-radius: 20px; background: #fff; padding: 16px 8px; cursor: pointer;
+    box-shadow: 0 5px 0 rgba(0,0,0,.1); display: flex; flex-direction: column; align-items: center; gap: 4px;
+  }
+  .menuItem:active { transform: translateY(3px); box-shadow: 0 2px 0 rgba(0,0,0,.1); }
+  .menuItem.allTest { background: #fff3c4; }
+  .menuItem .ic { font-size: 2.6rem; }
+  .menuItem .tt { font-size: 1.35rem; font-weight: bold; }
+  .menuItem .sb { font-size: .9rem; opacity: .7; }
+  .menuItem .st { font-size: .9rem; min-height: 1.2em; }
+
+  /* ===== モード(きほん・くみあわせ・テスト) ===== */
+  .modes { display: flex; background: #fff; border-radius: 18px; padding: 4px; gap: 4px; box-shadow: 0 3px 0 rgba(0,0,0,.08); }
+  .mode { flex: 1; border: none; background: transparent; border-radius: 14px; min-height: 52px; font-size: 1.1rem; font-weight: bold; cursor: pointer; }
+  .mode.on { background: var(--big); color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.2); }
+
+  /* ===== レベルの タブ ===== */
+  .tabs { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+  .tab { border: 3px solid #ffd6a5; background: #fff; border-radius: 999px; min-height: 48px; padding: 4px 18px; font-size: 1.05rem; font-weight: bold; cursor: pointer; }
+  .tab.on { background: #ffd6a5; }
+
+  /* ===== おだい ===== */
+  .question { text-align: center; font-size: 1.3rem; line-height: 1.5; }
+  .question .num { font-size: 2.6rem; font-weight: bold; color: var(--accent); word-break: break-all; }
+  .question .u { font-size: 1.6rem; font-weight: bold; color: var(--accent); }
+
+  /* ===== うさぎの ふきだし ===== */
+  .talk { display: flex; align-items: center; gap: 10px; }
+  .talk .face { font-size: 2.4rem; flex: none; }
+  .bubble {
+    flex: 1; background: #fff; border: 3px solid #ffd6a5; border-radius: 16px;
+    padding: 10px 14px; font-size: 1.15rem; line-height: 1.5; min-height: 3.2em;
+  }
+
+  /* ===== はこを おく ばしょ(きほん) ===== */
+  #stageCard { padding: 14px 12px 10px; transition: box-shadow .2s; }
+  #stageCard.dropok { box-shadow: 0 0 0 4px var(--goal); }
+  #stage { position: relative; margin: 0 4px; }
+  .status { text-align: center; font-size: 1.2rem; margin-top: 4px; }
+  .status b { font-size: 1.6rem; color: var(--accent); }
+
+  .piece {
+    position: absolute; border-radius: 6px;
+    background: var(--big); border: 2px solid rgba(0,0,0,.12);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: bold; font-size: .9rem; overflow: hidden; cursor: pointer;
+    text-shadow: 0 1px 2px rgba(0,0,0,.25);
+  }
+  .piece.alt { background: var(--alt); }
+  .piece.sm { background: var(--small); cursor: default; }
+  .piece.over {
+    opacity: .55;
+    background-image: repeating-linear-gradient(45deg, rgba(255,255,255,.6) 0 6px, transparent 6px 12px);
+  }
+  .pop { animation: pop .35s ease-out; }
+  @keyframes pop { 0% { transform: scale(.3) translateY(-30px); } 70% { transform: scale(1.08); } 100% { transform: scale(1); } }
+  /* いっしょに かぞえる ときの ひかりかた */
+  .counting { outline: 4px solid #ffd23f; outline-offset: -2px; transform: translateY(-6px); transition: transform .15s; z-index: 5; }
+  .badge { font-size: 1.1rem; text-shadow: 0 1px 2px rgba(0,0,0,.35); }
+
+  /* --- ものさし --- */
+  .road { position: absolute; top: 110px; left: 0; right: 0; height: 14px; background: var(--road); border-radius: 7px; }
+  .goalRoad { position: absolute; top: 110px; left: 0; height: 14px; background: #bfe8d3; border-radius: 7px 0 0 7px; }
+  .ticks { position: absolute; top: 124px; left: 0; right: 0; height: 16px; }
+  .tick { position: absolute; top: 0; width: 1px; height: 6px; background: #b8a99a; }
+  .tick.major { width: 2px; height: 14px; background: #8c7b6b; }
+  .flash .tick.major { background: var(--accent) !important; width: 4px; height: 18px; }
+  .flash .tank .tick.major { width: 34px; height: 4px; }
+  .flag { position: absolute; top: 0; height: 124px; border-left: 3px dashed var(--goal); }
+  .flag .icon { position: absolute; top: -6px; left: -4px; font-size: 1.6rem; }
+  .cheer .flag .icon, .cheer .flag2 { animation: bounce .5s ease-in-out 3; }
+  @keyframes bounce { 50% { transform: translateY(-10px) rotate(-10deg); } }
+  .axisLabel { position: absolute; top: 145px; font-size: .95rem; font-weight: bold; white-space: nowrap; transform: translateX(-50%); }
+  .axisLabel.zero { transform: none; }
+  .axisLabel.goal { color: var(--goal); }
+  .nowMark { position: absolute; top: 18px; color: var(--accent); font-size: .85rem; transform: translateX(-50%); }
+
+  /* --- すいそう --- */
+  .tank { position: absolute; border: 4px solid #9fb8c8; border-top: none; border-radius: 0 0 18px 18px; overflow: hidden; background: #f4fbff; }
+  .tank .piece { border-radius: 0; left: 0; right: 0; border-width: 1px 0; }
+  .tank .tick { left: 0; top: auto; width: 10px; height: 1px; z-index: 3; }
+  .tank .tick.major { width: 22px; height: 2px; }
+  .tline { position: absolute; border-top: 3px dashed var(--goal); z-index: 4; }
+  .flag2 { position: absolute; font-weight: bold; color: var(--goal); white-space: nowrap; }
+
+  /* --- てんびん --- */
+  .beam { position: absolute; height: 10px; background: #a1887f; border-radius: 5px; transition: transform .5s; }
+  .post { position: absolute; width: 12px; background: #a1887f; border-radius: 4px; }
+  .pivot { position: absolute; width: 0; height: 0; border-left: 18px solid transparent; border-right: 18px solid transparent; border-bottom: 30px solid #8d6e63; }
+  .pan { position: absolute; width: 150px; height: 110px; transition: left .5s, top .5s; }
+  .pan .string { position: absolute; left: 74px; top: 0; width: 2px; height: 100px; background: #bcaaa4; }
+  .pan .plate { position: absolute; bottom: 0; left: 0; right: 0; height: 10px; background: #8d6e63; border-radius: 0 0 10px 10px; }
+  .pan .load { position: absolute; bottom: 10px; left: 0; right: 0; display: flex; flex-wrap: wrap-reverse; justify-content: center; align-items: flex-end; gap: 2px; }
+  .wt { background: var(--big); color: #fff; font-weight: bold; border-radius: 10px 10px 4px 4px; display: flex; align-items: center; justify-content: center; border: 2px solid rgba(0,0,0,.15); cursor: pointer; position: relative; }
+  .wt.big { width: 44px; height: 32px; font-size: .8rem; }
+  .wt.alt { background: var(--alt); }
+  .wt.sm { width: 24px; height: 18px; font-size: .55rem; background: var(--small); cursor: default; }
+  .thing { display: flex; flex-direction: column; align-items: center; }
+  .thing .em { font-size: 3.2rem; line-height: 1; }
+  .thing .tag { background: #fff3c4; border-radius: 8px; padding: 0 8px; font-weight: bold; }
+
+  /* --- タイル --- */
+  .field { position: absolute; background: #eef8e8; border: 3px solid #7cb342; }
+  .slot { position: absolute; border: 2px dashed #c9b8a6; border-radius: 6px; }
+  .dimTop, .dimLeft { position: absolute; font-weight: bold; font-size: .95rem; white-space: nowrap; }
+  .dimLeft { text-align: right; line-height: 1.2; white-space: normal; }
+
+  /* ===== どうぐばこ ===== */
+  .tools { display: flex; gap: 14px; justify-content: center; align-items: flex-end; flex-wrap: wrap; }
+  .tool {
+    touch-action: none; /* ドラッグ中に がめんが うごかないように */
+    border: none; border-radius: 14px; color: #fff; font-weight: bold;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    box-shadow: 0 5px 0 rgba(0,0,0,.18); cursor: grab; text-shadow: 0 1px 2px rgba(0,0,0,.2);
+  }
+  .tool:active { transform: translateY(3px); box-shadow: 0 2px 0 rgba(0,0,0,.18); }
+  .tool.big { background: var(--big); min-width: 150px; height: 96px; padding: 0 12px; font-size: 1.9rem; }
+  .tool.sm { background: var(--small); min-width: 100px; height: 66px; padding: 0 10px; font-size: 1.3rem; }
+  .tool small { font-size: .85rem; font-weight: normal; }
+  .tool[disabled] { opacity: .4; cursor: default; }
+  .pulse { animation: pulse .8s ease-in-out 4; }
+  @keyframes pulse { 50% { transform: scale(1.1); } }
+  .toolHint { text-align: center; font-size: .95rem; opacity: .7; margin-top: 8px; }
+  .ghost { position: fixed; pointer-events: none; transform: translate(-50%, -50%) scale(.9); opacity: .85; z-index: 50; }
+
+  /* ===== ボタン ===== */
+  .controls { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  .btn {
+    min-width: 110px; min-height: 56px; padding: 8px 16px; font-size: 1.15rem; font-weight: bold;
+    border: none; border-radius: 16px; background: #fff; box-shadow: 0 4px 0 rgba(0,0,0,.12); cursor: pointer;
+  }
+  .btn:active { transform: translateY(2px); box-shadow: 0 2px 0 rgba(0,0,0,.12); }
+  .btn.primary { background: var(--goal); color: #fff; }
+  .btn[disabled] { opacity: .4; }
+
+  /* ===== こたえる パネル(きほん) ===== */
+  #askPanel { text-align: center; font-size: 1.25rem; line-height: 1.6; }
+  .choices { display: flex; gap: 12px; justify-content: center; margin-top: 10px; flex-wrap: wrap; }
+  .choice {
+    min-width: 92px; min-height: 72px; font-size: 1.8rem; font-weight: bold;
+    border: 3px solid #ffd6a5; border-radius: 18px; background: #fff; cursor: pointer;
+  }
+  .choice:active { background: #fff1dc; }
+  .choice[disabled] { opacity: .4; }
+
+  /* ===== こたえあわせ(きほん) ===== */
+  #reveal { text-align: center; font-size: 1.2rem; line-height: 1.7; }
+  .miniRow { display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-end; gap: 4px; margin: 8px 0; }
+  .mini { height: 34px; min-width: 40px; padding: 0 4px; border-radius: 6px; background: var(--big); color: #fff; font-size: .8rem; font-weight: bold; display: flex; align-items: center; justify-content: center; }
+  .mini.sm { background: var(--small); min-width: 22px; height: 24px; font-size: .6rem; }
+  .equation { font-size: 1.9rem; font-weight: bold; margin: 6px 0 10px; word-break: break-all; }
+  .equation .big { color: var(--accent); }
+  .digits { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin: 6px 0; }
+  .digits .grp { display: flex; flex-direction: column; align-items: center; padding: 2px 6px; border-radius: 8px; }
+  .digits .grp b { font-size: 1.6rem; letter-spacing: 2px; }
+  .digits .grp span { font-size: .9rem; }
+
+  /* ===== しき と □(くみあわせ・テスト) ===== */
+  .eqCard { text-align: center; }
+  .eq { font-size: 1.7rem; font-weight: bold; line-height: 2.4; word-break: break-all; }
+  .eq .lhs { color: var(--accent); }
+  .eq .pre, .eq .unit { margin: 0 4px; }
+  .blank {
+    display: inline-block; min-width: 76px; height: 58px; line-height: 52px; padding: 0 8px;
+    border: 3px solid #d7c8b8; border-radius: 12px; background: #fffdf8; vertical-align: middle;
+    color: var(--ink); cursor: pointer; text-align: center;
+  }
+  .blank.on { border-color: var(--big); box-shadow: 0 0 0 4px rgba(255,180,120,.35); }
+  .blank.ok { border-color: var(--goal); background: #e6f7ee; }
+  .blank.ng { border-color: var(--ng); background: #fff2e2; }
+  .progress { display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; align-items: center; font-weight: bold; }
+  .dot { width: 18px; height: 18px; border-radius: 50%; background: #eadfce; }
+  .dot.done { background: var(--big); }
+  .dot.now { outline: 3px solid var(--accent); }
+
+  /* ばらばらに した ず(くみあわせ) */
+  #viz { min-height: 60px; }
+  .bar { position: relative; height: 60px; margin: 0 auto; }
+  .seg { position: absolute; top: 0; height: 56px; background: var(--big); border-radius: 6px; color: #fff; font-weight: bold; font-size: .85rem; display: flex; align-items: center; justify-content: center; overflow: hidden; text-shadow: 0 1px 2px rgba(0,0,0,.25); }
+  .seg.alt { background: var(--alt); }
+  .seg.rem { background: var(--small); border-radius: 4px; }
+  .segBox { position: absolute; top: 0; height: 56px; border: 2px dashed #c9b8a6; border-radius: 6px; }
+  .vizNote { text-align: center; font-size: 1.2rem; font-weight: bold; min-height: 1.8em; margin-top: 8px; color: var(--accent); }
+  .rel { text-align: center; font-size: 1.3rem; font-weight: bold; background: #fff3c4; border-radius: 12px; padding: 6px; margin-top: 6px; }
+
+  /* すうじ キー */
+  .pad { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; max-width: 420px; margin: 0 auto; }
+  .key { min-height: 60px; font-size: 1.7rem; font-weight: bold; border: none; border-radius: 14px; background: #f6efe6; box-shadow: 0 4px 0 rgba(0,0,0,.12); cursor: pointer; }
+  .key:active { transform: translateY(2px); box-shadow: 0 2px 0 rgba(0,0,0,.12); }
+  .key.wide { grid-column: span 2; }
+  .key.fn { font-size: 1.1rem; background: #ffe7c7; }
+  .key.ok { font-size: 1.3rem; background: var(--goal); color: #fff; }
+
+  /* テストの けっか */
+  #result, #testStart { text-align: center; font-size: 1.2rem; line-height: 1.7; }
+  .score { font-size: 2.6rem; font-weight: bold; color: var(--accent); }
+  .review { text-align: left; margin: 10px auto; max-width: 520px; }
+  .review div { border-bottom: 2px dashed #eadfce; padding: 6px 2px; word-break: break-all; }
+  .review b { color: var(--goal); }
+
+  /* ===== はこの なかを みる まど ===== */
+  #inside { position: fixed; inset: 0; background: rgba(60,40,30,.55); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 60; }
+  #inside .card { width: 100%; max-width: 560px; text-align: center; font-size: 1.15rem; line-height: 1.5; }
+  #insideCanvas { display: block; margin: 10px auto; border-radius: 8px; }
+  #insideCount { font-size: 1.4rem; font-weight: bold; color: var(--accent); min-height: 1.5em; }
+  #insideTotal { font-size: 1.2rem; font-weight: bold; min-height: 1.6em; }
+
+  /* ===== おいわい ===== */
+  .yay { position: fixed; left: 50%; top: 35%; font-size: 3rem; font-weight: bold; color: var(--accent); text-shadow: 0 3px 0 #fff; pointer-events: none; z-index: 70; white-space: nowrap; animation: yay 1.4s ease-out forwards; }
+  @keyframes yay { 0% { transform: translate(-50%,-50%) scale(.3); opacity: 0; } 25% { transform: translate(-50%,-50%) scale(1.15); opacity: 1; } 80% { opacity: 1; } 100% { transform: translate(-50%,-70%) scale(1); opacity: 0; } }
+  .confetti { position: fixed; top: -40px; font-size: 1.8rem; pointer-events: none; z-index: 80; animation: fall linear forwards; }
+  @keyframes fall { to { transform: translateY(110vh) rotate(540deg); } }
+</style>
+</head>
+<body>
+<main>
+
+  <!-- ===================== メニュー ===================== -->
+  <div id="menu" class="col">
+    <header><h1>📦 たんいの はこ</h1></header>
+    <section class="talk">
+      <div class="face">🐰</div>
+      <div class="bubble">どれで あそぶ? えらんでね!</div>
+    </section>
+    <section class="menuGrid" id="menuGrid"></section>
+  </div>
+
+  <!-- ===================== あそぶ がめん ===================== -->
+  <div id="play" class="col hidden">
+    <header>
+      <button class="homeBtn" id="homeBtn">🏠 もどる</button>
+      <h1 id="playTitle"></h1>
+      <div class="stars" id="stars"></div>
+    </header>
+
+    <div class="modes" id="modes">
+      <button class="mode" data-mode="basic">きほん</button>
+      <button class="mode" data-mode="combo">くみあわせ</button>
+      <button class="mode" data-mode="test">テスト</button>
+    </div>
+
+    <!-- ---------- きほん: はこを ならべる ---------- -->
+    <div id="basicView" class="col">
+      <div class="tabs" id="tabs"></div>
+
+      <section class="card question">
+        <div id="targetText"></div>
+        <div id="promptText"></div>
+      </section>
+
+      <section class="talk">
+        <div class="face">🐰</div>
+        <div class="bubble" id="bubble"></div>
+      </section>
+
+      <section class="card" id="stageCard">
+        <div id="stage"></div>
+        <div class="status">いま <b id="nowText">0</b></div>
+      </section>
+
+      <section class="card" id="toolCard">
+        <div class="tools">
+          <button class="tool big" id="toolBig"></button>
+          <button class="tool sm" id="toolSmall"></button>
+        </div>
+        <div class="toolHint">タップ するか、うえまで ひっぱって おいてね</div>
+      </section>
+
+      <section class="card hidden" id="askPanel">
+        <div id="askText"></div>
+        <div class="choices" id="choices"></div>
+      </section>
+
+      <section class="card hidden" id="reveal"></section>
+
+      <section class="controls">
+        <button class="btn" id="undoBtn">↩ もどす</button>
+        <button class="btn" id="insideBtn">🔍 なかを みる</button>
+        <button class="btn" id="hintBtn">💡 ヒント</button>
+      </section>
+    </div>
+
+    <!-- ---------- くみあわせ・テスト: しきの □ に こたえる ---------- -->
+    <div id="qView" class="col hidden">
+      <section class="card progress hidden" id="progress"></section>
+
+      <section class="card hidden" id="testStart">
+        <div style="font-size:2.6rem">📝</div>
+        <div><b>10もん</b> の テスト だよ。</div>
+        <div>ず や ヒントは ないよ。ぜんぶ せいかい を めざそう!</div>
+        <button class="btn primary" id="testStartBtn" style="margin-top:10px">はじめる ▶</button>
+      </section>
+
+      <section class="card eqCard" id="eqCard">
+        <div class="eq" id="eq"></div>
+        <div id="eqNext" class="hidden" style="margin-top:8px"><button class="btn primary" id="qNextBtn">つぎの もんだい ▶</button></div>
+      </section>
+
+      <section class="talk" id="qTalk">
+        <div class="face">🐰</div>
+        <div class="bubble" id="qBubble"></div>
+      </section>
+
+      <section class="card" id="vizCard">
+        <div id="viz"></div>
+        <div class="vizNote" id="vizNote"></div>
+        <div class="rel hidden" id="vizRel"></div>
+      </section>
+
+      <section class="card" id="padCard"><div class="pad" id="pad"></div></section>
+
+      <section class="controls" id="qControls">
+        <button class="btn" id="qHintBtn">💡 ヒント</button>
+      </section>
+
+      <section class="card hidden" id="result"></section>
+    </div>
+  </div>
+</main>
+
+<!-- おおきい はこの なかを みる まど -->
+<div id="inside" class="hidden">
+  <div class="card">
+    <div id="insideTitle"></div>
+    <div id="insideCell" style="font-size:.95rem;opacity:.8"></div>
+    <canvas id="insideCanvas"></canvas>
+    <div id="insideCount"></div>
+    <div id="insideTotal"></div>
+    <button class="btn primary" id="insideClose" style="margin-top:8px">とじる</button>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   たんいの はこ
+   モード:
+     きほん     … おおきい はこを ならべて「いくつ はいるか」を かぞえる(たんい 2つ)
+     くみあわせ … 4L500mL や 3兆2000億 の ような まざった かたちを なおす(ず と ヒント つき)
+     テスト     … ず も ヒントも ない 10もん テスト
+   かずは ぜんぶ 「せいすう」で もつ(しょうすうは いちばん ちいさい たんいを 1 と して あつかう)。
+   ========================================================= */
+
+// ---------- こまかい どうぐ ----------
+const $ = (id) => document.getElementById(id);
+const shuffle = (arr) => { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+const randInt = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+// しょうすうの ひょうじ(0.01 を 1 と して もっている かずを もどす)
+const D = (v) => (v / 100).toFixed(2).replace(/\.?0+$/, '');
+const NUM = (s, unit) => {
+  const size = String(s).length > 10 ? 'font-size:1.7rem' : String(s).length > 7 ? 'font-size:2.1rem' : '';
+  return `<span class="num" style="${size}">${s}</span>` + (unit ? `<span class="u">${unit}</span>` : '');
+};
+
+/* ---------------------------------------------------------
+   たんいグループ の せってい
+   【きほん よう】 renderer と levels(はこを ならべる おだい)
+     big / small : おおきい はこ と ちいさい はこ
+     fmt / target / ans / extra / inside : ひょうじの しかた
+   【くみあわせ・テスト よう】 units と pairs(もんだいを じどうで つくる)
+     units : たんいの なまえ(n) と、いちばん ちいさい たんい いくつぶん か(f)
+     pairs : どの たんいの くみあわせ で だすか
+             k = おおきい たんいの かず の はんい、rems = はんぱ(ちいさい たんいで)
+             dec = しょうすうで だして よいか(true / 'half' は 0.5 だけ / false)
+   --------------------------------------------------------- */
+const MODULES = [
+  {
+    id: 'length', icon: '📏', title: '<ruby>長<rt>なが</rt></ruby>さ', sub: 'km ・ m ・ cm ・ mm',
+    renderer: 'line', piece: 'はこ',
+    colors: { big: '#ff8fab', alt: '#ff6f91', small: '#5bb8dc' },
+    goalMsg: '🚩 の ところまで、はこを ならべてみよう!',
+    overMsg: '🚩 を こえちゃった',
+    levels: [
+      {
+        id: 'km', tab: 'km と m', fmt: (v) => v + 'm',
+        big: { v: 1000, label: '1km', sub: '1000m' }, small: { v: 100, label: '100m' },
+        problems: [2000, 5000, 10000, 3500, 3000, 7000, 1500, 8000, 4000, 6000, 2500, 9000, 4200],
+        target: (t) => NUM(t, 'm') + ' の みち',
+        ans: (k, r) => (k ? k + 'km' : '') + (r ? r * 100 + 'm' : ''),
+        inside: { cols: 100, rows: 10, cell: '1m', group: (i) => i * 100 + 'm', total: '1m が 1000こ で 1000m = <b>1km</b>' },
+      },
+      {
+        id: 'm', tab: 'm と cm', fmt: (v) => v + 'cm',
+        big: { v: 100, label: '1m', sub: '100cm' }, small: { v: 10, label: '10cm' },
+        problems: [300, 500, 1000, 250, 700, 150, 400, 820, 600],
+        target: (t) => NUM(t, 'cm') + ' の テープ',
+        ans: (k, r) => (k ? k + 'm' : '') + (r ? r * 10 + 'cm' : ''),
+        inside: { cols: 10, rows: 10, cell: '1cm', group: (i) => i * 10 + 'cm', total: '1cm が 100こ で 100cm = <b>1m</b>' },
+      },
+    ],
+    units: { km: { n: 'km', f: 1e6 }, m: { n: 'm', f: 1000 }, cm: { n: 'cm', f: 10 }, mm: { n: 'mm', f: 1 } },
+    pairs: [
+      { U: 'km', u: 'm', k: [1, 15], rems: [100, 200, 300, 500, 800, 50, 250, 750], dec: true },
+      { U: 'm', u: 'cm', k: [1, 10], rems: [5, 20, 30, 50, 75, 80, 45], dec: true },
+      { U: 'cm', u: 'mm', k: [1, 30], rems: [1, 2, 3, 5, 7, 8, 9], dec: true },
+      { U: 'm', u: 'mm', k: [1, 5], rems: [500, 250, 100, 800], dec: true },
+    ],
+  },
+  {
+    id: 'volume', icon: '🧃', title: 'かさ', sub: 'L ・ dL ・ mL',
+    renderer: 'tank', piece: 'パック',
+    colors: { big: '#64b5f6', alt: '#42a5f5', small: '#4dd0e1' },
+    goalMsg: '🚩 の せん まで、みずを いれてみよう!',
+    overMsg: '🚩 の せんを こえちゃった',
+    levels: [
+      {
+        id: 'L', tab: 'L と mL', fmt: (v) => v + 'mL',
+        big: { v: 1000, label: '1L', sub: '1000mL' }, small: { v: 100, label: '1dL', sub: '100mL' },
+        problems: [2000, 3000, 1500, 5000, 2500, 4000, 800, 3200],
+        target: (t) => NUM(t, 'mL') + ' の みず',
+        ans: (k, r) => (k ? k + 'L' : '') + (r ? r + 'dL' : ''),
+        extra: (k, r) => (r ? `<div>(${k ? k + 'L' : ''}${r * 100}mL とも かけるよ)</div>` : ''),
+        inside: { cols: 100, rows: 10, cell: '1mL', group: (i) => i * 100 + 'mL', total: '1mL が 1000こ で 1000mL = <b>1L</b><br>(100mL の 1dL が 10こ ぶん)' },
+      },
+    ],
+    units: { L: { n: 'L', f: 1000 }, dL: { n: 'dL', f: 100 }, mL: { n: 'mL', f: 1 } },
+    pairs: [
+      { U: 'L', u: 'mL', k: [1, 10], rems: [100, 200, 500, 250, 750, 300, 800], dec: true },
+      { U: 'L', u: 'dL', k: [1, 10], rems: [1, 2, 3, 4, 5, 6, 7, 8, 9], dec: true },
+      { U: 'dL', u: 'mL', k: [1, 9], rems: [10, 20, 50, 30], dec: true },
+    ],
+  },
+  {
+    id: 'weight', icon: '⚖️', title: '<ruby>重<rt>おも</rt></ruby>さ', sub: 't ・ kg ・ g',
+    renderer: 'balance', piece: 'おもり',
+    colors: { big: '#90a4ae', alt: '#78909c', small: '#ffb74d' },
+    goalMsg: 'てんびんが まっすぐに なるまで、おもりを のせよう!',
+    overMsg: 'おもりの ほうが おもく なっちゃった',
+    levels: [
+      {
+        id: 'kg', tab: 'kg と g', fmt: (v) => v + 'g',
+        big: { v: 1000, label: '1kg', sub: '1000g' }, small: { v: 100, label: '100g' },
+        problems: [2000, 3000, 5000, 1500, 4000, 2500, 6000, 3700],
+        emojis: ['🍉', '🎃', '🐈', '🎒', '🍍', '🐕', '🥔'],
+        target: (t) => NUM(t, 'g') + ' を はかろう',
+        ans: (k, r) => (k ? k + 'kg' : '') + (r ? r * 100 + 'g' : ''),
+        inside: { cols: 100, rows: 10, cell: '1g', group: (i) => i * 100 + 'g', total: '1g が 1000こ で 1000g = <b>1kg</b>' },
+      },
+      {
+        id: 't', tab: 't と kg', fmt: (v) => v + 'kg',
+        big: { v: 1000, label: '1t', sub: '1000kg' }, small: { v: 100, label: '100kg' },
+        problems: [2000, 3000, 1500, 5000, 4000, 2600],
+        emojis: ['🚗', '🐘', '🚚', '🦏', '🦛'],
+        target: (t) => NUM(t, 'kg') + ' を はかろう',
+        ans: (k, r) => (k ? k + 't' : '') + (r ? r * 100 + 'kg' : ''),
+        inside: { cols: 100, rows: 10, cell: '1kg', group: (i) => i * 100 + 'kg', total: '1kg が 1000こ で 1000kg = <b>1t</b>' },
+      },
+    ],
+    units: { t: { n: 't', f: 1e6 }, kg: { n: 'kg', f: 1000 }, g: { n: 'g', f: 1 } },
+    pairs: [
+      { U: 'kg', u: 'g', k: [1, 20], rems: [100, 200, 500, 800, 50, 250, 750, 300], dec: true },
+      { U: 't', u: 'kg', k: [1, 10], rems: [100, 200, 500, 800, 250], dec: true },
+    ],
+  },
+  {
+    id: 'area', icon: '🟩', title: '<ruby>広<rt>ひろ</rt></ruby>さ', sub: 'km² ・ ha ・ a ・ m²',
+    renderer: 'grid', piece: 'タイル',
+    colors: { big: '#81c784', alt: '#66bb6a', small: '#aed581' },
+    goalMsg: 'はたけを タイルで うめてみよう!',
+    overMsg: 'はたけから はみだしちゃった',
+    levels: [
+      {
+        id: 'a', tab: 'a と m²', fmt: (v) => v + 'm²', side: 10,
+        big: { v: 100, label: '1a', sub: '10m×10m' }, small: null,
+        problems: [{ w: 2, h: 1 }, { w: 3, h: 2 }, { w: 5, h: 2 }, { w: 4, h: 3 }, { w: 2, h: 2 }, { w: 5, h: 4 }, { w: 3, h: 3 }, { w: 6, h: 2 }],
+        target: (t) => NUM(t, 'm²') + ' の はたけ',
+        ans: (k) => k + 'a',
+        extra: () => '<div>1a は たて 10m、よこ 10m。1m² が 10 × 10 = 100こ だね</div>',
+        inside: { cols: 10, rows: 10, square: true, cell: '1m²(たて 1m よこ 1m)', group: (i) => i * 10 + 'm²', total: '1m² が 100こ で 100m² = <b>1a</b>' },
+      },
+      {
+        id: 'ha', tab: 'ha と a', fmt: (v) => v + 'a', side: 100,
+        big: { v: 100, label: '1ha', sub: '100m×100m' }, small: null,
+        problems: [{ w: 2, h: 1 }, { w: 3, h: 2 }, { w: 4, h: 2 }, { w: 5, h: 3 }, { w: 2, h: 2 }, { w: 4, h: 4 }],
+        target: (t) => NUM(t, 'a') + ' の はたけ',
+        ans: (k) => k + 'ha',
+        extra: () => '<div>1ha は たて 100m、よこ 100m。1a が 10 × 10 = 100こ だね</div>',
+        inside: { cols: 10, rows: 10, square: true, cell: '1a(たて 10m よこ 10m)', group: (i) => i * 10 + 'a', total: '1a が 100こ で 100a = <b>1ha</b>' },
+      },
+    ],
+    units: { km2: { n: 'km²', f: 1e10 }, ha: { n: 'ha', f: 1e8 }, a: { n: 'a', f: 1e6 }, m2: { n: 'm²', f: 1e4 }, cm2: { n: 'cm²', f: 1 } },
+    pairs: [
+      { U: 'a', u: 'm2', k: [1, 20], rems: [10, 20, 50, 30, 80, 40], dec: true },
+      { U: 'ha', u: 'a', k: [1, 20], rems: [10, 20, 50, 5, 30, 75], dec: true },
+      { U: 'km2', u: 'ha', k: [1, 5], rems: [10, 20, 50, 30], dec: true },
+      { U: 'm2', u: 'cm2', k: [1, 5], rems: [5000, 2000, 2500, 1000], dec: true },
+      { U: 'ha', u: 'm2', k: [1, 5], rems: [5000, 2000, 1000], dec: true },
+    ],
+  },
+  {
+    id: 'bignum', icon: '🔢', title: '<ruby>大<rt>おお</rt></ruby>きい <ruby>数<rt>かず</rt></ruby>', sub: '万 ・ 億 ・ 兆',
+    renderer: 'grid', piece: 'はこ',
+    colors: { big: '#b39ddb', alt: '#9575cd', small: '#f48fb1' },
+    goalMsg: 'わくを はこで うめてみよう!',
+    overMsg: 'わくから はみだしちゃった',
+    levels: [
+      {
+        id: 'man', tab: '<ruby>万<rt>まん</rt></ruby>', fmt: (v) => String(v),
+        big: { v: 10000, label: '1万', sub: '10000' }, small: { v: 1000, label: '1000' },
+        problems: [20000, 50000, 30000, 100000, 120000, 35000, 70000, 46000],
+        target: (t) => NUM(t),
+        ans: (k, r) => (k ? k + '万' : '') + (r ? r * 1000 : ''),
+        extra: (k, r, t) => digitGroups(t),
+        inside: { cols: 100, rows: 100, square: true, cell: '1', group: (i) => i * 1000, total: '1 が 10000こ で <b>1万</b>' },
+      },
+      {
+        id: 'oku', tab: '<ruby>億<rt>おく</rt></ruby>', fmt: (v) => String(v),
+        big: { v: 1e8, label: '1億', sub: '10000万' }, small: { v: 1e7, label: '1000万' },
+        problems: [200000000, 500000000, 300000000, 1000000000, 1200000000, 350000000],
+        target: (t) => NUM(t),
+        ans: (k, r) => (k ? k + '億' : '') + (r ? r * 1000 + '万' : ''),
+        extra: (k, r, t) => digitGroups(t),
+        inside: { cols: 100, rows: 100, square: true, cell: '1万', group: (i) => i * 1000 + '万', total: '1万 が 10000こ で <b>1億</b>' },
+      },
+      {
+        id: 'cho', tab: '<ruby>兆<rt>ちょう</rt></ruby>', fmt: (v) => String(v),
+        big: { v: 1e12, label: '1兆', sub: '10000億' }, small: { v: 1e11, label: '1000億' },
+        problems: [2e12, 5e12, 3e12, 1e13, 3.5e12],
+        target: (t) => NUM(t),
+        ans: (k, r) => (k ? k + '兆' : '') + (r ? r * 1000 + '億' : ''),
+        extra: (k, r, t) => digitGroups(t),
+        inside: { cols: 100, rows: 100, square: true, cell: '1億', group: (i) => i * 1000 + '億', total: '1億 が 10000こ で <b>1兆</b>' },
+      },
+    ],
+    units: { cho: { n: '兆', f: 1e12 }, oku: { n: '億', f: 1e8 }, man: { n: '万', f: 1e4 }, one: { n: '', f: 1 } },
+    pairs: [
+      { U: 'cho', u: 'oku', k: [1, 20], rems: [1000, 2000, 5000, 500, 50, 3000, 2500, 100, 8000], dec: false },
+      { U: 'oku', u: 'man', k: [1, 20], rems: [2000, 5000, 1000, 3000, 500, 8000, 4000], dec: false },
+      { U: 'man', u: 'one', k: [1, 30], rems: [5000, 2000, 3000, 1000, 500, 8000], dec: false },
+    ],
+    comboTypes: ['splitMixed', 'joinMixed', 'mixedToDigits', 'digitsToMixed'],
+  },
+  {
+    id: 'decimal', icon: '🔟', title: '<ruby>小数<rt>しょうすう</rt></ruby>', sub: '1 ・ 0.1 ・ 0.01',
+    renderer: 'line', piece: 'はこ',
+    colors: { big: '#ffb74d', alt: '#ffa726', small: '#4db6ac' },
+    goalMsg: '🚩 の ところまで、はこを ならべてみよう!',
+    overMsg: '🚩 を こえちゃった',
+    levels: [
+      {
+        id: 'd1', tab: '1 と 0.1', fmt: D,
+        big: { v: 100, label: '1' }, small: { v: 10, label: '0.1' },
+        problems: [230, 150, 70, 310, 420, 90, 260, 500],
+        target: (t) => NUM(D(t)) + ' まで',
+        ans: (k, r) => `0.1 が ${k * 10 + r}こ`,
+        extra: () => '<div>1 は 0.1 が 10こ ぶん だからね</div>',
+        inside: { cols: 10, rows: 1, cell: '0.1', group: (i) => D(i * 10), total: '0.1 が 10こ で <b>1</b>' },
+      },
+      {
+        id: 'd2', tab: '0.1 と 0.01', fmt: D,
+        big: { v: 10, label: '0.1' }, small: { v: 1, label: '0.01' },
+        problems: [45, 23, 80, 61, 37, 100, 7],
+        target: (t) => NUM(D(t)) + ' まで',
+        ans: (k, r) => `0.01 が ${k * 10 + r}こ`,
+        extra: () => '<div>0.1 は 0.01 が 10こ ぶん だからね</div>',
+        inside: { cols: 10, rows: 1, cell: '0.01', group: (i) => D(i), total: '0.01 が 10こ で <b>0.1</b>' },
+      },
+    ],
+    // しょうすうは もんだいの かたちが ちがうので、とくべつに つくる
+    basicTypes: ['countToNum', 'numToCount'],
+    comboTypes: ['bigCountToNum', 'bigNumToCount', 'compose', 'decompose'],
+    gen: genDecimalQ,
+  },
+  {
+    id: 'time', icon: '⏰', title: '<ruby>時間<rt>じかん</rt></ruby>', sub: '日 ・ 時間 ・ 分 ・ 秒',
+    renderer: 'line', piece: 'はこ',
+    colors: { big: '#4db6ac', alt: '#26a69a', small: '#ffb74d' },
+    goalMsg: '🚩 の ところまで、はこを ならべてみよう!',
+    overMsg: '🚩 を こえちゃった',
+    levels: [
+      {
+        id: 'hm', tab: '時間 と 分', fmt: (v) => v + '分',
+        big: { v: 60, label: '1時間', sub: '60分' }, small: { v: 10, label: '10分' },
+        problems: [120, 180, 90, 150, 240, 200, 100, 300],
+        target: (t) => NUM(t, '分') + ' の じかん',
+        ans: (k, r) => (k ? k + '時間' : '') + (r ? r * 10 + '分' : ''),
+        inside: { cols: 10, rows: 6, groups: 6, cell: '1分', group: (i) => i * 10 + '分', total: '1分 が 60こ で 60分 = <b>1時間</b>' },
+      },
+      {
+        id: 'ms', tab: '分 と 秒', fmt: (v) => v + '秒',
+        big: { v: 60, label: '1分', sub: '60秒' }, small: { v: 10, label: '10秒' },
+        problems: [120, 180, 90, 150, 240, 200, 100],
+        target: (t) => NUM(t, '秒') + ' の じかん',
+        ans: (k, r) => (k ? k + '分' : '') + (r ? r * 10 + '秒' : ''),
+        inside: { cols: 10, rows: 6, groups: 6, cell: '1秒', group: (i) => i * 10 + '秒', total: '1秒 が 60こ で 60秒 = <b>1分</b>' },
+      },
+      {
+        id: 'dh', tab: '日 と 時間', fmt: (v) => v + '時間',
+        big: { v: 24, label: '1日', sub: '24時間' }, small: { v: 1, label: '1時間' },
+        problems: [48, 72, 30, 36, 120, 50, 96],
+        target: (t) => NUM(t, '時間') + ' の じかん',
+        ans: (k, r) => (k ? k + '日' : '') + (r ? r + '時間' : ''),
+        inside: { cols: 6, rows: 4, groups: 4, square: true, cell: '1時間', group: (i) => i * 6 + '時間', total: '1時間 が 24こ で 24時間 = <b>1日</b>' },
+      },
+    ],
+    units: { day: { n: '日', f: 86400 }, h: { n: '時間', f: 3600 }, min: { n: '分', f: 60 }, sec: { n: '秒', f: 1 } },
+    pairs: [
+      { U: 'h', u: 'min', k: [1, 5], rems: [10, 15, 20, 30, 40, 45, 50], dec: 'half' },
+      { U: 'min', u: 'sec', k: [1, 10], rems: [10, 15, 20, 30, 45, 50], dec: 'half' },
+      { U: 'day', u: 'h', k: [1, 7], rems: [2, 3, 6, 12, 18], dec: 'half' },
+    ],
+  },
+];
+// もんだいの しゅるい(とくに きめて いない グループは これを つかう)
+MODULES.forEach((m) => {
+  if (!m.basicTypes) m.basicTypes = ['toBig', 'toSmall'];
+  if (!m.comboTypes) m.comboTypes = ['splitMixed', 'joinMixed', 'decToSmall', 'smallToDec', 'mixedToDec', 'decToMixed'];
+});
+// ぜんぶの グループから でる テスト
+const ALL = { id: 'all', icon: '🏆', title: 'ぜんぶ テスト', colors: { big: '#ffb74d', alt: '#ffa726', small: '#4db6ac' } };
+
+/* =========================================================
+   もんだいを つくる(くみあわせ・テスト)
+   もんだい = { left: ひだりがわ, sep: '=' か '', blanks: [{ pre, unit, ans }], viz: ずの じょうほう }
+   ========================================================= */
+const one = (U) => (/^[0-9]/.test(U.n) ? U.n : '1' + U.n);   // 「1km」「1兆」「0.1」
+const amt = (base, u) => base / u.f + u.n;                     // 4500 → 「4500mL」
+const mixed = (v, U, u) => Math.floor(v / U.f) + U.n + (v % U.f) / u.f + u.n; // 「4L500mL」
+const B = (unit, ans, pre) => ({ unit, ans, pre });
+
+function genUnitQ(m, type) {
+  const pr = pick(m.pairs);
+  const U = m.units[pr.U], u = m.units[pr.u];
+  const k = randInt(pr.k[0], pr.k[1]);
+  const rem = pick(pr.rems) * u.f;
+  const vk = k * U.f, v = vk + rem;
+  // しょうすうに して よいか(小数第2位 まで / 時間は 0.5 だけ)
+  const decOK = pr.dec === true ? (v * 100) % U.f === 0 : pr.dec === 'half' ? rem * 2 === U.f : false;
+  const viz = (total) => ({ total, U, u });
+  switch (type) {
+    case 'toBig': return { left: amt(vk, u), blanks: [B(U.n, k)], viz: viz(vk) };            // 5000m = □km
+    case 'toSmall': return { left: k + U.n, blanks: [B(u.n, vk / u.f)], viz: viz(vk) };      // 5km = □m
+    case 'splitMixed': return { left: amt(v, u), blanks: [B(U.n, k), B(u.n, rem / u.f)], viz: viz(v) }; // 1200m = □km□m
+    case 'joinMixed': return { left: mixed(v, U, u), blanks: [B(u.n, v / u.f)], viz: viz(v) };          // 1km200m = □m
+    case 'decToSmall': return decOK ? { left: amt(v, U), blanks: [B(u.n, v / u.f)], viz: viz(v) } : null; // 4.5L = □mL
+    case 'smallToDec': return decOK ? { left: amt(v, u), blanks: [B(U.n, v / U.f)], viz: viz(v) } : null; // 4500mL = □L
+    case 'mixedToDec': return decOK ? { left: mixed(v, U, u), blanks: [B(U.n, v / U.f)], viz: viz(v) } : null; // 4L500mL = □L
+    case 'decToMixed': return decOK ? { left: amt(v, U), blanks: [B(U.n, k), B(u.n, rem / u.f)], viz: viz(v) } : null; // 4.5L = □L□mL
+    case 'mixedToDigits': return { left: mixed(v, U, u), blanks: [B('', v)], viz: viz(v) };             // 3兆2000億 = □
+    case 'digitsToMixed': return { left: String(v), blanks: [B(U.n, k), B(u.n, rem / u.f)], viz: viz(v) }; // 3200000000000 = □兆□億
+  }
+  return null;
+}
+
+// しょうすう: 「0.1 が 23こ で □」「3.45 は 1 が □こ …」など
+function genDecimalQ(type) {
+  const I = { n: '1', f: 100 }, T = { n: '0.1', f: 10 }, H = { n: '0.01', f: 1 };
+  const vizOf = (v, u) => ({ total: v, U: v >= 100 ? I : T, u });
+  const u = pick([T, H]);
+  switch (type) {
+    case 'countToNum': { const n = u === T ? randInt(2, 59) : randInt(2, 99); const v = n * u.f; return { left: `${u.n} が ${n}こ で`, sep: '', blanks: [B('', v / 100)], viz: vizOf(v, u) }; }
+    case 'numToCount': { const v = u === T ? randInt(2, 59) * 10 : randInt(2, 99); return { left: `${D(v)} は`, sep: '', blanks: [B('こ', v / u.f, `${u.n} が`)], viz: vizOf(v, u) }; }
+    case 'bigCountToNum': { const v = randInt(101, 499); return { left: `0.01 が ${v}こ で`, sep: '', blanks: [B('', v / 100)], viz: vizOf(v, H) }; }
+    case 'bigNumToCount': { const v = randInt(101, 499); return { left: `${D(v)} は`, sep: '', blanks: [B('こ', v, '0.01 が')], viz: vizOf(v, H) }; }
+    case 'compose': {
+      const a = randInt(1, 9), b = randInt(0, 9), c = randInt(1, 9), v = a * 100 + b * 10 + c;
+      return { left: `1 が ${a}こ、0.1 が ${b}こ、0.01 が ${c}こ で`, sep: '', blanks: [B('', v / 100)], viz: vizOf(v, H) };
+    }
+    case 'decompose': {
+      const a = randInt(1, 9), b = randInt(0, 9), c = randInt(1, 9), v = a * 100 + b * 10 + c;
+      return { left: `${D(v)} は`, sep: '', blanks: [B('こ', a, '1 が'), B('こ', b, '0.1 が'), B('こ', c, '0.01 が')], viz: vizOf(v, H) };
+    }
+  }
+  return null;
+}
+
+// kind: 'combo' か 'test'。used に いれた もんだいは なるべく くりかえさない
+function genQ(m, kind, used) {
+  const types = kind === 'combo' ? m.comboTypes : m.basicTypes.concat(m.comboTypes, m.comboTypes);
+  for (let t = 0; t < 300; t++) {
+    const q = m.gen ? m.gen(pick(types)) : genUnitQ(m, pick(types));
+    if (!q) continue;
+    q.key = q.left + '|' + q.blanks.map((b) => b.ans).join(',');
+    if (used && used.has(q.key) && t < 250) continue;
+    if (used) used.add(q.key);
+    q.mod = m;
+    return q;
+  }
+}
+
+/* =========================================================
+   じょうたい
+   ========================================================= */
+let mod = null;       // いまの たんいグループ(ALL の ときも ある)
+let mode = 'basic';   // basic / combo / test
+
+// --- きほん ---
+let lvl = null;
+let order = [], qIndex = 0;
+let prob = {};
+let target = 0, scaleMax = 0;
+let pieces = [];
+let phase = 'build';  // build / ask1 / ask2 / busy / done
+let hintLevel = 0;
+let lastAdded = -1;
+
+// --- くみあわせ・テスト ---
+let cur = null;       // { q, vals, active, locked, busy }
+let comboUsed = new Set();
+let test = null;      // { list: [{ q, vals }], idx, used }
+let vizToken = 0;     // かぞえる アニメを とちゅうで とめる ための ばんごう
+let qHint = 0;
+
+// ほし・テストの きろく(この たんまつ だけ。つかえなくても うごく)
+let stars = {}, best = {};
+try { stars = JSON.parse(localStorage.getItem('unitStars') || '{}') || {}; } catch (e) { stars = {}; }
+try { best = JSON.parse(localStorage.getItem('unitBest') || '{}') || {}; } catch (e) { best = {}; }
+function saveRecords() {
+  try { localStorage.setItem('unitStars', JSON.stringify(stars)); localStorage.setItem('unitBest', JSON.stringify(best)); } catch (e) { /* むし */ }
+}
+
+const stage = $('stage'), stageCard = $('stageCard');
+const toolBig = $('toolBig'), toolSmall = $('toolSmall');
+const sum = () => pieces.reduce((a, b) => a + b, 0);
+const countOf = (v) => pieces.filter((p) => p === v).length;
+const ratio = () => lvl.big.v / lvl.small.v; // ちいさい はこ いくつで おおきい はこ 1こ か
+function say(html) { $('bubble').innerHTML = html; }
+function sayQ(html) { $('qBubble').innerHTML = html; }
+
+// おおきい かずを 4けたずつ いろわけ して みせる
+function digitGroups(t) {
+  const s = String(t);
+  const names = ['', '万', '億', '兆'];
+  const colors = ['#fff3c4', '#e8f5e9', '#ede7f6', '#fde2e4'];
+  const groups = [];
+  for (let end = s.length, i = 0; end > 0; end -= 4, i++) groups.unshift({ d: s.slice(Math.max(0, end - 4), end), n: names[i], c: colors[i] });
+  return '<div style="font-size:1rem">4けた ずつ くぎって みると…</div><div class="digits">'
+    + groups.map((g) => `<div class="grp" style="background:${g.c}"><b>${g.d}</b><span>${g.n || 'いち'}</span></div>`).join('')
+    + '</div>';
+}
+
+/* =========================================================
+   メニュー
+   ========================================================= */
+function starsOf(m) { return m.levels.reduce((a, l) => a + (stars[l.id] || 0), 0) + (stars[m.id + '-combo'] || 0); }
+
+function showMenu() {
+  closeInside();
+  vizToken++;
+  $('play').classList.add('hidden');
+  $('menu').classList.remove('hidden');
+  const grid = $('menuGrid');
+  grid.innerHTML = '';
+  MODULES.concat([ALL]).forEach((m) => {
+    const b = document.createElement('button');
+    b.className = 'menuItem' + (m === ALL ? ' allTest' : '');
+    const n = m === ALL ? 0 : starsOf(m);
+    const medal = best[m.id] === 10 ? ' 🏅' : '';
+    b.innerHTML = `<div class="ic">${m.icon}</div><div class="tt">${m.title}</div>`
+      + `<div class="sb">${m === ALL ? 'いろんな たんいが でるよ' : m.sub}</div>`
+      + `<div class="st">${n ? '⭐ × ' + n : ''}${medal}</div>`;
+    b.addEventListener('click', () => openModule(m));
+    grid.appendChild(b);
+  });
+}
+
+function openModule(m) {
+  mod = m;
+  const root = document.documentElement.style;
+  root.setProperty('--big', m.colors.big);
+  root.setProperty('--alt', m.colors.alt);
+  root.setProperty('--small', m.colors.small);
+  $('playTitle').innerHTML = m.icon + ' ' + m.title;
+  $('menu').classList.add('hidden');
+  $('play').classList.remove('hidden');
+  $('modes').classList.toggle('hidden', m === ALL);
+  comboUsed = new Set();
+
+  if (m !== ALL) {
+    const tabs = $('tabs');
+    tabs.innerHTML = '';
+    tabs.classList.toggle('hidden', m.levels.length < 2);
+    m.levels.forEach((l) => {
+      const b = document.createElement('button');
+      b.className = 'tab';
+      b.innerHTML = l.tab;
+      b.addEventListener('click', () => openLevel(l));
+      tabs.appendChild(b);
+    });
+  }
+  setMode(m === ALL ? 'test' : 'basic');
+}
+
+/* =========================================================
+   モードを かえる
+   ========================================================= */
+function setMode(md) {
+  mode = md;
+  vizToken++;
+  closeInside();
+  document.querySelectorAll('.mode').forEach((b) => b.classList.toggle('on', b.dataset.mode === md));
+  $('basicView').classList.toggle('hidden', md !== 'basic');
+  $('qView').classList.toggle('hidden', md === 'basic');
+  if (md === 'basic') openLevel(mod.levels[0]);
+  else if (md === 'combo') newComboQ();
+  else showTestStart();
+}
+
+function updateHeader() {
+  let t = '';
+  if (mode === 'basic' && lvl) { const n = stars[lvl.id] || 0; t = n ? '⭐ × ' + n : ''; }
+  else if (mode === 'combo') { const n = stars[mod.id + '-combo'] || 0; t = n ? '⭐ × ' + n : ''; }
+  else if (best[mod.id] != null) t = (best[mod.id] === 10 ? '🏅' : '📝') + ' ' + best[mod.id] + '/10';
+  $('stars').textContent = t;
+}
+
+/* #####################################################################
+   きほん モード: はこを ならべる
+   ##################################################################### */
+function openLevel(l) {
+  lvl = l;
+  [...$('tabs').children].forEach((b, i) => b.classList.toggle('on', mod.levels[i] === l));
+  order = [l.problems[0]].concat(shuffle(l.problems.slice(1)));
+  qIndex = 0;
+  toolBig.innerHTML = l.big.label + (l.big.sub ? `<small>(${l.big.sub})</small>` : '');
+  if (l.small) toolSmall.innerHTML = l.small.label + (l.small.sub ? `<small>(${l.small.sub})</small>` : '');
+  newProblem();
+}
+
+function newProblem() {
+  if (qIndex >= order.length) { order = shuffle(lvl.problems); qIndex = 0; }
+  const p = order[qIndex++];
+  if (typeof p === 'object') { prob = { w: p.w, h: p.h }; target = p.w * p.h * lvl.big.v; }
+  else { prob = {}; target = p; }
+  if (lvl.emojis) prob.emoji = pick(lvl.emojis);
+
+  scaleMax = (Math.ceil(target / lvl.big.v) + 1) * lvl.big.v;
+  pieces = [];
+  hintLevel = 0;
+  lastAdded = -1;
+  phase = 'build';
+
+  $('targetText').innerHTML = lvl.target(target);
+  $('promptText').innerHTML = `${lvl.big.label} の ${mod.piece} で ためしてみよう`;
+  toolSmall.classList.toggle('hidden', !lvl.small || target % lvl.big.v === 0);
+  $('askPanel').classList.add('hidden');
+  $('reveal').classList.add('hidden');
+  $('toolCard').classList.remove('hidden');
+  stage.innerHTML = '';
+  stage.classList.remove('cheer');
+  setToolsEnabled(true);
+  updateHeader();
+  say(mod.goalMsg);
+  render();
+}
+
+/* ---------- がめんを かく ---------- */
+function render() {
+  if (!mod || mode !== 'basic' || $('play').classList.contains('hidden')) return;
+  ({ line: renderLine, tank: renderTank, balance: renderBalance, grid: renderGrid })[mod.renderer]();
+  lastAdded = -1;
+  $('nowText').textContent = lvl.fmt(sum());
+  $('undoBtn').disabled = pieces.length === 0 || phase !== 'build';
+}
+
+function pieceClass(v, i, cum, bigNo) {
+  let c = v === lvl.big.v ? (bigNo % 2 === 0 ? ' alt' : '') : ' sm';
+  if (cum + v > target) c += ' over';
+  if (i === lastAdded) c += ' pop';
+  return c;
+}
+
+// --- ものさし(ながさ・しょうすう・じかん) ---
+function renderLine() {
+  const W = stage.clientWidth;
+  const px = W / scaleMax;
+  const minor = lvl.small ? lvl.small.v : lvl.big.v / 10;
+  let h = `<div class="road"></div><div class="goalRoad" style="width:${target * px}px"></div><div class="ticks">`;
+  for (let m = 0; m <= scaleMax; m += minor) {
+    const major = m % lvl.big.v === 0;
+    if (!major && minor * px < 3) continue;
+    h += `<div class="tick${major ? ' major' : ''}" style="left:${m * px}px"></div>`;
+  }
+  h += '</div>';
+  let cum = 0, bigNo = 0;
+  pieces.forEach((v, i) => {
+    const isBig = v === lvl.big.v;
+    if (isBig) bigNo++;
+    const w = v * px;
+    const style = `left:${cum * px}px;width:${Math.max(w - 2, 2)}px;top:${isBig ? 40 : 70}px;height:${isBig ? 70 : 40}px`;
+    const label = isBig && w >= lvl.big.label.length * 10 + 14 ? lvl.big.label : '';
+    h += `<div class="piece${pieceClass(v, i, cum, bigNo)}" data-idx="${i}" style="${style}">${label}</div>`;
+    cum += v;
+  });
+  h += `<div class="flag" style="left:${target * px}px"><span class="icon">🚩</span></div>`;
+  h += `<div class="axisLabel zero" style="left:0">${lvl.fmt(0)}</div>`;
+  h += `<div class="axisLabel goal" style="left:${target * px}px">${lvl.fmt(target)}</div>`;
+  const s = sum();
+  if (s > 0 && s !== target) h += `<div class="nowMark" style="left:${s * px}px">▼</div>`;
+  stage.innerHTML = h;
+  stage.style.height = '175px';
+}
+
+// --- すいそう(かさ) ---
+function renderTank() {
+  const W = stage.clientWidth;
+  const H = 260, top = 16;
+  const tw = Math.min(200, W * 0.5);
+  const left = Math.max(30, (W - tw) / 2 - 30);
+  const px = H / scaleMax;
+  const minor = lvl.small ? lvl.small.v : lvl.big.v / 10;
+  let h = `<div class="tank" style="left:${left}px;top:${top}px;width:${tw}px;height:${H}px">`;
+  let cum = 0, bigNo = 0;
+  pieces.forEach((v, i) => {
+    const isBig = v === lvl.big.v;
+    if (isBig) bigNo++;
+    const label = isBig && v * px >= 22 ? lvl.big.label : '';
+    h += `<div class="piece${pieceClass(v, i, cum, bigNo)}" data-idx="${i}" style="bottom:${cum * px}px;height:${Math.max(v * px - 1, 2)}px">${label}</div>`;
+    cum += v;
+  });
+  for (let m = minor; m < scaleMax; m += minor) {
+    const major = m % lvl.big.v === 0;
+    if (!major && minor * px < 4) continue;
+    h += `<div class="tick${major ? ' major' : ''}" style="bottom:${m * px}px"></div>`;
+  }
+  h += '</div>';
+  const y = top + H - target * px;
+  h += `<div class="tline" style="left:${left - 12}px;width:${tw + 24}px;top:${y}px"></div>`;
+  h += `<div class="flag2" style="left:${left + tw + 14}px;top:${y - 14}px">🚩 ${lvl.fmt(target)}</div>`;
+  stage.innerHTML = h;
+  stage.style.height = H + top + 20 + 'px';
+}
+
+// --- てんびん(おもさ) ---
+function renderBalance() {
+  const W = stage.clientWidth;
+  const cx = W / 2, cy = 120;
+  const L = Math.min(150, W * 0.33);
+  if (!stage.querySelector('.beam')) {
+    stage.innerHTML = '<div class="post"></div><div class="pivot"></div><div class="beam"></div>'
+      + '<div class="pan" id="panL"><div class="string"></div><div class="load"></div><div class="plate"></div></div>'
+      + '<div class="pan" id="panR"><div class="string"></div><div class="load"></div><div class="plate"></div></div>';
+    stage.style.height = '300px';
+  }
+  const diff = sum() - target;
+  // おもりが おもい → みぎが さがる(ちいさな ちがいでも わかる ように すこし おおげさに)
+  let deg = 0;
+  if (diff !== 0) deg = Math.sign(diff) * Math.min(14, Math.max(5, Math.abs(diff) / target * 30));
+  const rad = deg * Math.PI / 180;
+  const ex = L * Math.cos(rad), ey = L * Math.sin(rad);
+
+  Object.assign(stage.querySelector('.beam').style, { left: cx - L + 'px', top: cy - 5 + 'px', width: 2 * L + 'px', transform: `rotate(${deg}deg)` });
+  Object.assign(stage.querySelector('.pivot').style, { left: cx - 18 + 'px', top: cy + 2 + 'px' });
+  Object.assign(stage.querySelector('.post').style, { left: cx - 6 + 'px', top: cy + 30 + 'px', height: 270 - cy + 'px' });
+  const panL = $('panL'), panR = $('panR');
+  Object.assign(panL.style, { left: cx - ex - 75 + 'px', top: cy - ey + 'px' });
+  Object.assign(panR.style, { left: cx + ex - 75 + 'px', top: cy + ey + 'px' });
+
+  panL.querySelector('.load').innerHTML = `<div class="thing"><div class="em">${prob.emoji}</div><div class="tag">${lvl.fmt(target)}</div></div>`;
+  let h = '', bigNo = 0;
+  pieces.forEach((v, i) => {
+    const isBig = v === lvl.big.v;
+    if (isBig) bigNo++;
+    let c = isBig ? 'wt big' + (bigNo % 2 === 0 ? ' alt' : '') : 'wt sm';
+    if (i === lastAdded) c += ' pop';
+    h += `<div class="${c}" data-idx="${i}">${isBig ? lvl.big.label : lvl.small.label}</div>`;
+  });
+  panR.querySelector('.load').innerHTML = h;
+}
+
+// --- タイル(ひろさ・おおきい かず) ---
+function renderGrid() {
+  const W = stage.clientWidth;
+  const isField = !!prob.w;
+  const cols = isField ? prob.w : 10;
+  const padL = isField ? 48 : 0, padT = isField ? 26 : 0;
+  const cell = Math.min(64, Math.floor((W - padL) / cols));
+  const rows = Math.ceil(scaleMax / lvl.big.v / cols);
+  const at = (slot) => ({ x: padL + (slot % cols) * cell, y: padT + Math.floor(slot / cols) * cell });
+  let h = '';
+
+  if (isField) {
+    h += `<div class="field" style="left:${padL - 3}px;top:${padT - 3}px;width:${prob.w * cell + 6}px;height:${prob.h * cell + 6}px"></div>`;
+    h += `<div class="dimTop" style="left:${padL}px;width:${prob.w * cell}px;top:0;text-align:center">よこ ${prob.w * lvl.side}m</div>`;
+    h += `<div class="dimLeft" style="left:0;width:${padL - 6}px;top:${padT + prob.h * cell / 2 - 20}px">たて<br>${prob.h * lvl.side}m</div>`;
+  } else {
+    const full = Math.floor(target / lvl.big.v);
+    const frac = (target % lvl.big.v) / lvl.big.v;
+    for (let i = 0; i < full; i++) { const p = at(i); h += `<div class="slot" style="left:${p.x}px;top:${p.y}px;width:${cell - 2}px;height:${cell - 2}px"></div>`; }
+    if (frac > 0) { const p = at(full); h += `<div class="slot" style="left:${p.x}px;top:${p.y}px;width:${cell * frac}px;height:${cell - 2}px"></div>`; }
+  }
+
+  // おおきい はこを さきに つめて、ちいさい はこは そのあと
+  const list = pieces.map((v, i) => ({ v, i })).sort((a, b) => b.v - a.v);
+  let cum = 0, bigNo = 0;
+  list.forEach(({ v, i }) => {
+    const isBig = v === lvl.big.v;
+    if (isBig) bigNo++;
+    const slot = Math.floor(cum / lvl.big.v);
+    const off = (cum % lvl.big.v) / lvl.big.v;
+    const p = at(slot);
+    const w = isBig ? cell - 2 : cell * v / lvl.big.v - 1;
+    const label = isBig && cell >= lvl.big.label.length * 10 + 10 ? lvl.big.label : '';
+    h += `<div class="piece${pieceClass(v, i, cum, bigNo)}" data-idx="${i}" style="left:${p.x + off * cell}px;top:${p.y}px;width:${Math.max(w, 2)}px;height:${cell - 2}px;border-radius:${isBig ? 6 : 2}px">${label}</div>`;
+    cum += v;
+  });
+  stage.innerHTML = h;
+  stage.style.height = padT + rows * cell + 4 + 'px';
+}
+
+/* ---------- はこを おく / もどす ---------- */
+function addPiece(v) {
+  if (phase !== 'build') return;
+  if (sum() + v > scaleMax) { say('もう おけないよ。「もどす」で へらしてみよう'); return; }
+  pieces.push(v);
+  lastAdded = pieces.length - 1;
+  render();
+  afterChange(v);
+}
+
+function undo() {
+  if (phase !== 'build' || pieces.length === 0) return;
+  pieces.pop();
+  render();
+  say(sum() === 0 ? mod.goalMsg : 'ひとつ もどしたよ。つづけてみよう');
+}
+
+function afterChange(last) {
+  const s = sum();
+  if (s === target) { onFilled(); return; }
+  if (s > target) {
+    // せめない。ずで みせて、どうすれば いいか きづけるように
+    if (lvl.small && target % lvl.big.v !== 0 && last === lvl.big.v) {
+      say(`あれれ、${mod.overMsg}。「もどす」で ひとつ もどして、<b>ちいさい ${mod.piece}</b> を つかってみよう`);
+      pulse(toolSmall);
+    } else {
+      say(`あれれ、${mod.overMsg}。「もどす」で ひとつ もどしてみよう`);
+    }
+    return;
+  }
+  say(pick(['いいね!', 'その ちょうし!', 'どんどん いこう', 'もう すこし かな?']));
+}
+
+/* ---------- ぴったり! ---------- */
+async function onFilled() {
+  phase = 'busy';
+  setToolsEnabled(false);
+  render();
+  stage.classList.add('cheer');
+  showYay(mod.renderer === 'balance' ? 'つりあった!' : 'ぴったり!');
+  await wait(1200);
+
+  // ちいさい はこで おおきい はこ 1こぶん いじょう つかったら、まとめて みせる
+  if (lvl.small && countOf(lvl.small.v) >= ratio()) {
+    say(`${lvl.small.label} の ${mod.piece} ${ratio()}こ で、${lvl.big.label} の ${mod.piece} 1こ と おなじ だね。まとめてみよう!`);
+    await wait(2400);
+    const k = Math.floor(target / lvl.big.v);
+    const r = (target % lvl.big.v) / lvl.small.v;
+    pieces = Array(k).fill(lvl.big.v).concat(Array(r).fill(lvl.small.v));
+    render();
+    await wait(1500);
+  }
+  $('toolCard').classList.add('hidden');
+  askCount(countOf(lvl.big.v) > 0 ? 'ask1' : 'ask2');
+}
+
+/* ---------- こたえる: 「いくつ?」 ---------- */
+function askCount(which) {
+  phase = which;
+  const isBig = which === 'ask1';
+  const unit = isBig ? lvl.big : lvl.small;
+  const n = countOf(unit.v);
+  $('askText').innerHTML = (isBig || countOf(lvl.big.v) === 0 ? '' : 'じゃあ、')
+    + `<b style="color:${isBig ? 'var(--alt)' : 'var(--small)'}">${unit.label} の ${mod.piece}</b> は なんこ かな?`;
+  say('かぞえてみてね。わからなかったら 💡 を おしてね');
+
+  const cands = [n + 1, n - 1, n * 10, n + 2, n - 2].filter((v) => v >= 0 && v !== n);
+  const opts = shuffle([n, ...[...new Set(cands)].slice(0, 2)]);
+  const box = $('choices');
+  box.innerHTML = '';
+  opts.forEach((v) => {
+    const b = document.createElement('button');
+    b.className = 'choice';
+    b.textContent = v;
+    b.addEventListener('click', () => answer(v === n, isBig));
+    box.appendChild(b);
+  });
+  $('askPanel').classList.remove('hidden');
+}
+
+async function answer(correct, isBig) {
+  if (phase !== 'ask1' && phase !== 'ask2') return;
+  if (correct) {
+    if (isBig && lvl.small && countOf(lvl.small.v) > 0) { say('そうだね!'); askCount('ask2'); }
+    else reveal();
+    return;
+  }
+  say('おしいね。いっしょに かぞえてみよう!');
+  await countAlong(isBig ? lvl.big.v : lvl.small.v);
+  say('なんこ だったかな? もういちど えらんでみてね');
+}
+
+async function countAlong(v) {
+  const prev = phase;
+  phase = 'busy';
+  document.querySelectorAll('.choice').forEach((b) => (b.disabled = true));
+  const els = [...stage.querySelectorAll('[data-idx]')]
+    .filter((el) => pieces[+el.dataset.idx] === v)
+    .sort((a, b) => a.dataset.idx - b.dataset.idx);
+  for (let i = 0; i < els.length; i++) {
+    els[i].classList.add('counting');
+    els[i].innerHTML = '<span class="badge">' + (i + 1) + '</span>';
+    say((i + 1) + ' …');
+    await wait(els.length > 15 ? 400 : 650);
+    els[i].classList.remove('counting');
+  }
+  document.querySelectorAll('.choice').forEach((b) => (b.disabled = false));
+  phase = prev;
+}
+
+/* ---------- こたえあわせ ---------- */
+function reveal() {
+  phase = 'done';
+  stars[lvl.id] = (stars[lvl.id] || 0) + 1;
+  saveRecords();
+  updateHeader();
+  $('askPanel').classList.add('hidden');
+
+  const k = countOf(lvl.big.v);
+  const r = lvl.small ? countOf(lvl.small.v) : 0;
+  let minis = '';
+  for (let i = 0; i < k; i++) minis += `<div class="mini">${lvl.big.label}</div>`;
+  for (let i = 0; i < r; i++) minis += `<div class="mini sm">${lvl.small.label}</div>`;
+
+  let html = `<div><b>${lvl.fmt(target)}</b> は…</div><div class="miniRow">${minis}</div>`;
+  html += `<div>${k ? `${lvl.big.label} が <b>${k}こ</b>` : ''}${k && r ? ' と、' : ''}${r ? `${lvl.small.label} が <b>${r}こ</b>` : ''}</div>`;
+  html += `<div class="equation">${lvl.fmt(target)} = <span class="big">${lvl.ans(k, r)}</span></div>`;
+  if (lvl.extra) html += lvl.extra(k, r, target);
+  html += '<button class="btn primary" id="nextBtn" style="margin-top:10px">つぎの もんだい ▶</button>';
+
+  const rv = $('reveal');
+  rv.innerHTML = html;
+  rv.classList.remove('hidden');
+  $('nextBtn').addEventListener('click', newProblem);
+  say(`${mod.piece}の かず を かぞえたら、こたえが わかったね!`);
+  render();
+}
+
+/* ---------- ヒント(だんだん くわしく) ---------- */
+function hint() {
+  if (phase === 'ask1' || phase === 'ask2') {
+    say('いっしょに かぞえてみよう!');
+    countAlong(phase === 'ask1' ? lvl.big.v : lvl.small.v).then(() => say('なんこ だったかな?'));
+    return;
+  }
+  if (phase !== 'build') return;
+  hintLevel++;
+  if (hintLevel === 1) {
+    say(`${lvl.big.label} の ${mod.piece} の なかを みてみよう`);
+    openInside();
+  } else if (hintLevel === 2) {
+    say(`${lvl.big.label} は ${lvl.big.sub || (lvl.small.label + ' が ' + ratio() + 'こ')} だよ`
+      + (stage.querySelector('.tick.major') ? '。<b style="color:var(--accent)">おおきい めもり</b> 1つぶん が ' + lvl.big.label + ' だよ' : ''));
+    stage.classList.add('flash');
+    setTimeout(() => stage.classList.remove('flash'), 2500);
+  } else {
+    say(`${mod.piece}を 1こずつ おいて、かぞえてみよう`);
+    pulse(toolBig);
+    hintLevel = 0;
+  }
+}
+
+/* ---------- おおきい はこの なか(ちいさい マスが いくつ あるか) ---------- */
+let insideTimer = null;
+function openInside() {
+  if (!lvl) return;
+  const ins = lvl.inside;
+  const G = ins.groups || 10; // なんかいに わけて みせるか
+  $('insideTitle').innerHTML = `${lvl.big.label} の ${mod.piece} を あけてみると…`;
+  $('insideCell').textContent = `1マス = ${ins.cell}`;
+  $('insideCount').textContent = '';
+  $('insideTotal').innerHTML = '';
+  $('inside').classList.remove('hidden');
+
+  const cv = $('insideCanvas');
+  const W = Math.min(460, window.innerWidth - 80);
+  const cw = W / ins.cols;
+  const ch = ins.square ? cw : (ins.rows === 1 ? 44 : 18);
+  const H = ch * ins.rows;
+  const dpr = window.devicePixelRatio || 1;
+  cv.width = W * dpr; cv.height = H * dpr;
+  cv.style.width = W + 'px'; cv.style.height = H + 'px';
+  const ctx = cv.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  const color = getComputedStyle(document.documentElement).getPropertyValue('--big').trim();
+  const thin = Math.min(cw, ch) < 5 ? 'rgba(255,255,255,.35)' : 'rgba(255,255,255,.8)';
+  const line = (x1, y1, x2, y2, thick) => {
+    ctx.strokeStyle = thick ? 'rgba(0,0,0,.4)' : thin;
+    ctx.lineWidth = thick ? 1.5 : 0.6;
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+  };
+  const draw = (g) => {
+    const shown = ins.cols * ins.rows * g / G;
+    ctx.fillStyle = '#f6f1ea';
+    ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = color;
+    const fullRows = Math.floor(shown / ins.cols);
+    ctx.fillRect(0, 0, W, fullRows * ch);
+    ctx.fillRect(0, fullRows * ch, (shown % ins.cols) * cw, ch);
+    for (let c = 0; c <= ins.cols; c++) line(c * cw, 0, c * cw, H, c % 10 === 0);
+    for (let r = 0; r <= ins.rows; r++) line(0, r * ch, W, r * ch, r % 10 === 0 || ins.rows <= 10);
+  };
+
+  let g = 0;
+  draw(0);
+  clearInterval(insideTimer);
+  insideTimer = setInterval(() => {
+    g++;
+    draw(g);
+    $('insideCount').textContent = ins.group(g);
+    if (g >= G) {
+      clearInterval(insideTimer);
+      $('insideTotal').innerHTML = ins.total;
+    }
+  }, 350);
+}
+function closeInside() { clearInterval(insideTimer); $('inside').classList.add('hidden'); }
+
+/* ---------- どうぐ: タップで おく / ドラッグして おとす ---------- */
+function setupTool(el, getV) {
+  el.addEventListener('pointerdown', (e) => {
+    if (phase !== 'build' || el.disabled) return;
+    e.preventDefault();
+    el.setPointerCapture(e.pointerId);
+    const start = { x: e.clientX, y: e.clientY };
+    let ghost = null;
+    const move = (ev) => {
+      if (!ghost && Math.hypot(ev.clientX - start.x, ev.clientY - start.y) > 10) {
+        ghost = el.cloneNode(true);
+        ghost.removeAttribute('id');
+        ghost.classList.add('ghost');
+        document.body.appendChild(ghost);
+      }
+      if (ghost) {
+        ghost.style.left = ev.clientX + 'px';
+        ghost.style.top = ev.clientY + 'px';
+        stageCard.classList.toggle('dropok', isOverStage(ev));
+      }
+    };
+    const end = (ev) => {
+      el.removeEventListener('pointermove', move);
+      el.removeEventListener('pointerup', end);
+      el.removeEventListener('pointercancel', end);
+      stageCard.classList.remove('dropok');
+      if (ghost) {
+        ghost.remove();
+        if (ev.type === 'pointerup' && isOverStage(ev)) addPiece(getV());
+      } else if (ev.type === 'pointerup') {
+        addPiece(getV()); // うごかさずに はなした = タップ
+      }
+    };
+    el.addEventListener('pointermove', move);
+    el.addEventListener('pointerup', end);
+    el.addEventListener('pointercancel', end);
+  });
+}
+function isOverStage(ev) {
+  const r = stageCard.getBoundingClientRect();
+  const m = 30;
+  return ev.clientX > r.left - m && ev.clientX < r.right + m && ev.clientY > r.top - m && ev.clientY < r.bottom + m;
+}
+function setToolsEnabled(on) { toolBig.disabled = !on; toolSmall.disabled = !on; }
+function pulse(el) { el.classList.add('pulse'); setTimeout(() => el.classList.remove('pulse'), 3300); }
+
+/* #####################################################################
+   くみあわせ・テスト: しきの □ に すうじを いれる
+   ##################################################################### */
+
+// しきを かく(□ を タップすると そこに にゅうりょく)
+function drawEq(marks) {
+  const q = cur.q;
+  let h = `<span class="lhs">${q.left}</span>` + (q.sep === '' ? ' ' : ' = ');
+  q.blanks.forEach((b, i) => {
+    if (i > 0) h += b.pre ? '、' : ' ';
+    let c = 'blank';
+    if (marks) c += marks[i] ? ' ok' : ' ng';
+    else if (i === cur.active && !cur.locked) c += ' on';
+    h += (b.pre ? `<span class="pre">${b.pre}</span>` : '') + `<span class="${c}" data-i="${i}">${cur.vals[i] || ''}</span>` + (b.unit ? `<span class="unit">${b.unit}</span>` : '');
+  });
+  $('eq').innerHTML = h;
+}
+
+// すうじ キー
+function buildPad() {
+  const keys = ['7', '8', '9', '⌫', '4', '5', '6', '.', '1', '2', '3', '▶', '0', 'OK'];
+  const pad = $('pad');
+  pad.innerHTML = '';
+  keys.forEach((k) => {
+    const b = document.createElement('button');
+    b.className = 'key' + (k === '0' || k === 'OK' ? ' wide' : '') + (k === '⌫' || k === '▶' || k === '.' ? ' fn' : '') + (k === 'OK' ? ' ok' : '');
+    b.textContent = k === 'OK' ? 'こたえる' : k === '▶' ? 'つぎの□' : k;
+    b.addEventListener('click', () => pressKey(k));
+    pad.appendChild(b);
+  });
+}
+
+function pressKey(k) {
+  if (!cur || cur.locked || cur.busy) return;
+  if (k === 'OK') { submit(); return; }
+  if (k === '▶') { cur.active = (cur.active + 1) % cur.q.blanks.length; drawEq(); return; }
+  let s = cur.vals[cur.active] || '';
+  if (k === '⌫') s = s.slice(0, -1);
+  else if (k === '.') { if (!s.includes('.')) s = (s || '0') + '.'; }
+  else if (s.length < 16) s = (s === '0' ? '' : s) + k;
+  cur.vals[cur.active] = s;
+  drawEq();
+}
+
+function startQ(q) {
+  cur = { q, vals: q.blanks.map(() => ''), active: 0, locked: false, busy: false };
+  drawEq();
+}
+
+function submit() {
+  const empty = cur.q.blanks.findIndex((b, i) => !cur.vals[i]);
+  if (empty >= 0) {
+    cur.active = empty;
+    drawEq();
+    (mode === 'combo' || mode === 'test') && sayQ('ぜんぶの □ に かずを いれてね');
+    return;
+  }
+  const marks = cur.q.blanks.map((b, i) => Number(cur.vals[i]) === b.ans);
+  if (mode === 'test') testAnswered(marks.every(Boolean));
+  else comboAnswered(marks);
+}
+
+/* ---------- くみあわせ モード ---------- */
+function newComboQ() {
+  vizToken++;
+  qHint = 0;
+  showQParts({ eqCard: 1, qTalk: 1, vizCard: 1, padCard: 1, qControls: 1 });
+  $('eqNext').classList.add('hidden');
+  $('vizRel').classList.add('hidden');
+  $('vizNote').textContent = '';
+  startQ(genQ(mod, 'combo', comboUsed));
+  if (comboUsed.size > 60) comboUsed = new Set();
+  renderViz();
+  updateHeader();
+  sayQ('□ を タップ して、したの キーで かずを いれてね');
+}
+
+// ず: おおきい たんいの はこを ならべ、はんぱは ちいさく
+function renderViz() {
+  const { total, U } = cur.q.viz;
+  const n = Math.floor(total / U.f), rem = total % U.f;
+  const W = $('viz').clientWidth || 300;
+  const slots = n + (rem ? 1 : 0);
+  const sw = Math.min(90, Math.floor(W / Math.max(slots, 1)));
+  const lab = one(U);
+  const showLab = sw >= lab.length * 10 + 12;
+  let h = '';
+  for (let i = 0; i < n; i++) h += `<div class="seg${i % 2 ? ' alt' : ''}" style="left:${i * sw}px;width:${sw - 3}px">${showLab ? lab : ''}</div>`;
+  if (rem) {
+    h += `<div class="segBox" style="left:${n * sw}px;width:${sw - 3}px"></div>`;
+    h += `<div class="seg rem" style="left:${n * sw}px;width:${Math.max(3, rem / U.f * (sw - 3))}px"></div>`;
+  }
+  $('viz').innerHTML = `<div class="bar" style="width:${slots * sw}px">${h}</div>`;
+}
+
+// ちいさい たんいで いうと いくつ?(しょうすうは「0.1 が 23こ」の いいかた)
+function inSmall(q, base) {
+  const u = q.viz.u;
+  return q.mod.id === 'decimal' ? `${u.n} が ${base / u.f}こ` : amt(base, u);
+}
+
+// ずの はこを 1つずつ ひからせて、ちいさい たんいで いくつ か を みせる
+async function countBar() {
+  const token = ++vizToken;
+  cur.busy = true;
+  const q = cur.q, { total, U } = q.viz;
+  const n = Math.floor(total / U.f), rem = total % U.f;
+  const segs = [...$('viz').querySelectorAll('.seg')];
+  const note = $('vizNote');
+  const delay = n > 12 ? 380 : 750;
+  for (let i = 0; i < n; i++) {
+    if (token !== vizToken) return;
+    segs[i].classList.add('counting');
+    note.textContent = `${one(U)} が ${i + 1}こ → ${inSmall(q, (i + 1) * U.f)}`;
+    await wait(delay);
+    segs[i].classList.remove('counting');
+  }
+  if (rem && token === vizToken) {
+    segs[n].classList.add('counting');
+    note.textContent = (n ? `${one(U)} が ${n}こ と、` : '') + `のこり ${inSmall(q, rem)}`;
+    await wait(1200);
+    segs[n].classList.remove('counting');
+  }
+  if (token === vizToken) cur.busy = false;
+}
+
+async function comboAnswered(marks) {
+  if (marks.every(Boolean)) {
+    cur.locked = true;
+    drawEq(marks);
+    showYay('せいかい!');
+    stars[mod.id + '-combo'] = (stars[mod.id + '-combo'] || 0) + 1;
+    saveRecords();
+    updateHeader();
+    sayQ(pick(['すごい! できたね!', 'せいかい! その ちょうし!', 'ばっちり!']));
+    $('eqNext').classList.remove('hidden');
+    return;
+  }
+  // まちがえても せめない。ずで いっしょに たしかめる
+  drawEq(marks);
+  sayQ('おしい! ずで いっしょに たしかめて みよう');
+  await countBar();
+  if (mode !== 'combo') return;
+  sayQ('もういちど かんがえてみよう。オレンジの □ を なおしてね(⌫ で けせるよ)');
+  cur.active = marks.findIndex((x) => !x);
+  drawEq();
+}
+
+function comboHint() {
+  if (!cur || cur.locked || cur.busy) return;
+  qHint++;
+  const q = cur.q, U = q.viz.U;
+  if (qHint % 2 === 1) {
+    // 1かいめ: たんいの つながりを みせる
+    $('vizRel').innerHTML = `${one(U)} = ${inSmall(q, U.f)}`;
+    $('vizRel').classList.remove('hidden');
+    sayQ(`${one(U)} が いくつ あるか、ずを みて かぞえてみよう`);
+  } else {
+    // 2かいめ: いっしょに かぞえる
+    sayQ('いっしょに かぞえてみよう!');
+    countBar();
+  }
+}
+
+/* ---------- テスト モード ---------- */
+function showTestStart() {
+  vizToken++;
+  showQParts({ testStart: 1, qTalk: 1 });
+  sayQ(mod === ALL ? 'いろんな たんいが でるよ。がんばろう!' : 'じゅんびが できたら「はじめる」を おしてね');
+  updateHeader();
+}
+
+function startTest() {
+  const used = new Set();
+  test = { list: [], idx: 0 };
+  for (let i = 0; i < 10; i++) {
+    const m = mod === ALL ? pick(MODULES) : mod;
+    test.list.push({ q: genQ(m, 'test', used), ok: false, vals: [] });
+  }
+  showQParts({ progress: 1, eqCard: 1, qTalk: 1, padCard: 1 });
+  $('eqNext').classList.add('hidden');
+  nextTestQ();
+}
+
+function nextTestQ() {
+  const it = test.list[test.idx];
+  // しんちょく(●)
+  $('progress').innerHTML = `<span>${test.idx + 1} / 10</span>`
+    + test.list.map((x, i) => `<span class="dot${i < test.idx ? ' done' : ''}${i === test.idx ? ' now' : ''}"></span>`).join('');
+  startQ(it.q);
+  sayQ(mod === ALL ? `${it.q.mod.icon} ${it.q.mod.title} の もんだい` : 'こたえを いれて「こたえる」を おしてね');
+}
+
+function testAnswered(ok) {
+  const it = test.list[test.idx];
+  it.ok = ok;
+  it.vals = cur.vals.slice();
+  test.idx++;
+  if (test.idx < 10) nextTestQ();
+  else showResult();
+}
+
+function answerText(q) {
+  return q.blanks.map((b) => (b.pre ? b.pre + ' ' : '') + b.ans + b.unit).join('、');
+}
+
+function showResult() {
+  const score = test.list.filter((x) => x.ok).length;
+  best[mod.id] = Math.max(best[mod.id] || 0, score);
+  saveRecords();
+  updateHeader();
+  showQParts({ result: 1, qTalk: 1 });
+  let h;
+  if (score === 10) {
+    h = '<div style="font-size:3rem">🎉🏅🎉</div><div class="score">おめでとう!</div><div><b>10もん ぜんぶ せいかい!</b></div><div>たんいの はかせ だね!</div>';
+    sayQ('ぜんもん せいかい! ほんとうに すごい!');
+    confetti();
+  } else {
+    h = `<div class="score">${score} / 10</div><div>よく がんばったね! あと ${10 - score}もん で ぜんぶ せいかい!</div>`;
+    h += '<div style="margin-top:8px">こたえを たしかめよう</div><div class="review">';
+    test.list.filter((x) => !x.ok).forEach((x) => {
+      h += `<div>${x.q.left}${x.q.sep === '' ? ' ' : ' = '}<b>${answerText(x.q)}</b></div>`;
+    });
+    h += '</div>';
+    sayQ(score >= 7 ? 'おしい! もうすこし だよ!' : 'まちがえた ところは、「くみあわせ」で れんしゅう してみよう');
+  }
+  h += '<button class="btn primary" id="retryBtn" style="margin-top:10px">もういちど テスト ▶</button>';
+  $('result').innerHTML = h;
+  $('retryBtn').addEventListener('click', startTest);
+}
+
+// qView の なかで みせる ぶぶんを きりかえる
+function showQParts(on) {
+  ['progress', 'testStart', 'eqCard', 'qTalk', 'vizCard', 'padCard', 'qControls', 'result']
+    .forEach((id) => $(id).classList.toggle('hidden', !on[id]));
+}
+
+/* ---------- おいわい ---------- */
+function showYay(text) {
+  const y = document.createElement('div');
+  y.className = 'yay';
+  y.textContent = text;
+  document.body.appendChild(y);
+  setTimeout(() => y.remove(), 1500);
+}
+function confetti() {
+  const items = ['🎉', '⭐', '🌸', '✨', '🎈', '💖'];
+  for (let i = 0; i < 40; i++) {
+    const c = document.createElement('div');
+    c.className = 'confetti';
+    c.textContent = pick(items);
+    c.style.left = Math.random() * 100 + 'vw';
+    c.style.animationDuration = 2.5 + Math.random() * 2 + 's';
+    c.style.animationDelay = Math.random() * 1.5 + 's';
+    document.body.appendChild(c);
+    setTimeout(() => c.remove(), 6500);
+  }
+}
+
+/* =========================================================
+   はじめる
+   ========================================================= */
+setupTool(toolBig, () => lvl.big.v);
+setupTool(toolSmall, () => lvl.small.v);
+buildPad();
+$('undoBtn').addEventListener('click', undo);
+$('hintBtn').addEventListener('click', hint);
+$('homeBtn').addEventListener('click', showMenu);
+$('insideBtn').addEventListener('click', () => { if (phase === 'build') openInside(); });
+$('insideClose').addEventListener('click', closeInside);
+$('inside').addEventListener('click', (e) => { if (e.target.id === 'inside') closeInside(); });
+stage.addEventListener('click', (e) => {
+  const el = e.target.closest('[data-idx]');
+  if (el && phase === 'build' && pieces[+el.dataset.idx] === lvl.big.v) openInside();
+});
+document.querySelectorAll('.mode').forEach((b) => b.addEventListener('click', () => setMode(b.dataset.mode)));
+$('eq').addEventListener('click', (e) => {
+  const el = e.target.closest('.blank');
+  if (el && cur && !cur.locked && !cur.busy) { cur.active = +el.dataset.i; drawEq(); }
+});
+$('qNextBtn').addEventListener('click', newComboQ);
+$('qHintBtn').addEventListener('click', comboHint);
+$('testStartBtn').addEventListener('click', startTest);
+window.addEventListener('resize', () => { render(); if (mode === 'combo' && cur) renderViz(); });
+
+showMenu();
+</script>
+</body>
+</html>
